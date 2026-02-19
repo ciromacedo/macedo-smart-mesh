@@ -1,0 +1,7 @@
+---
+- name: Deploy gateway local
+  hosts: gateways
+  become: true
+  roles:
+    - common
+    - gateway

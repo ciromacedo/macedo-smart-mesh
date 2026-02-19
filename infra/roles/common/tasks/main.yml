@@ -1,0 +1,27 @@
+---
+- name: Atualizar pacotes
+  apt:
+    update_cache: true
+    upgrade: safe
+  when: ansible_os_family == "Debian"
+
+- name: Instalar dependências base
+  apt:
+    name:
+      - curl
+      - git
+      - python3
+      - python3-pip
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Instalar Docker
+  shell: curl -fsSL https://get.docker.com | sh
+  args:
+    creates: /usr/bin/docker
+
+- name: Garantir Docker ativo
+  systemd:
+    name: docker
+    state: started
+    enabled: true

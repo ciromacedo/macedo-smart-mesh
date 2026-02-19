@@ -1,0 +1,7 @@
+---
+- name: Deploy servidor central
+  hosts: server
+  become: true
+  roles:
+    - common
+    - server

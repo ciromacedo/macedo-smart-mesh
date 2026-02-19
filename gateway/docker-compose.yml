@@ -1,0 +1,21 @@
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: gateway-mediamtx
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./mediamtx/mediamtx.yml:/mediamtx.yml
+    environment:
+      - MTX_LOGLEVEL=info
+
+  onvif-discovery:
+    build:
+      context: ./onvif-discovery
+    container_name: gateway-onvif
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - ./config:/app/config
+    depends_on:
+      - mediamtx

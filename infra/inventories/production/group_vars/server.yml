@@ -1,0 +1,5 @@
+# Variáveis do servidor central
+server_domain: "example.com"  # TODO: domínio real
+mediamtx_webrtc_port: 8889
+postgres_password: "changeme"
+turn_secret: "changeme"

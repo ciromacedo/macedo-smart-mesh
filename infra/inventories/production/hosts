@@ -1,0 +1,8 @@
+[server]
+# Servidor central na Digital Ocean
+# webrtc-server ansible_host=SEU_IP_FIXO ansible_user=root
+
+[gateways]
+# Gateways nas redes locais
+# site-a ansible_host=192.168.1.10 ansible_user=pi
+# site-b ansible_host=192.168.2.10 ansible_user=pi

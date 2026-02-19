@@ -1,0 +1,81 @@
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: server-mediamtx
+    restart: unless-stopped
+    ports:
+      - "8554:8554"   # RTSP
+      - "8889:8889"   # WebRTC/WHIP/WHEP
+      - "8189:8189/udp" # WebRTC UDP
+    volumes:
+      - ./mediamtx/mediamtx.yml:/mediamtx.yml
+
+  coturn:
+    image: coturn/coturn:latest
+    container_name: server-coturn
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./coturn/turnserver.conf:/etc/turnserver.conf
+
+  backend:
+    build:
+      context: ./backend
+    container_name: server-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://app:secret@postgres:5432/webrtc_gateway
+      - REDIS_URL=redis://redis:6379
+      - MEDIAMTX_API=http://mediamtx:9997
+    depends_on:
+      - postgres
+      - redis
+      - mediamtx
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: server-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: server-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: webrtc_gateway
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: server-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  nginx:
+    image: nginx:alpine
+    container_name: server-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - backend
+      - frontend
+      - mediamtx
+
+volumes:
+  pgdata:

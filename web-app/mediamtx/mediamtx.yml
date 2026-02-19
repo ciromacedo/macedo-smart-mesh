@@ -1,0 +1,34 @@
+# MediaMTX - Server Configuration
+# Docs: https://github.com/bluenviron/mediamtx
+
+###############################################
+# General
+logLevel: info
+logDestinations: [stdout]
+
+###############################################
+# API
+api: true
+apiAddress: :9997
+
+###############################################
+# RTSP
+rtsp: true
+rtspAddress: :8554
+
+###############################################
+# WebRTC (serve para o browser via WHEP)
+webrtc: true
+webrtcAddress: :8889
+webrtcICEServers2:
+  - url: stun:stun.l.google.com:19302
+  # TODO: Configurar TURN server próprio
+  # - url: turn:SEU_IP:3478
+  #   username: webrtc
+  #   password: secret
+
+###############################################
+# Paths — recebe streams dos gateways via WHIP
+paths:
+  all_others:
+    # Aceita qualquer stream publicado pelos gateways

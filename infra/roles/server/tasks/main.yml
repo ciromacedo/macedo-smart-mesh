@@ -1,0 +1,19 @@
+---
+- name: Criar diretório do projeto
+  file:
+    path: /opt/{{ project_name }}
+    state: directory
+    mode: "0755"
+
+- name: Copiar docker-compose e configs
+  synchronize:
+    src: "{{ playbook_dir }}/../../web-app/"
+    dest: /opt/{{ project_name }}/
+    rsync_opts:
+      - "--exclude=node_modules"
+      - "--exclude=.git"
+
+- name: Subir containers
+  community.docker.docker_compose_v2:
+    project_src: /opt/{{ project_name }}
+    state: present

@@ -1,0 +1,18 @@
+---
+- name: Criar diretório do projeto
+  file:
+    path: /opt/{{ project_name }}-gateway
+    state: directory
+    mode: "0755"
+
+- name: Copiar docker-compose e configs
+  synchronize:
+    src: "{{ playbook_dir }}/../../gateway/"
+    dest: /opt/{{ project_name }}-gateway/
+    rsync_opts:
+      - "--exclude=.git"
+
+- name: Subir containers
+  community.docker.docker_compose_v2:
+    project_src: /opt/{{ project_name }}-gateway
+    state: present
