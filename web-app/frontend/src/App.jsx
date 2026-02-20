@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard.jsx";
 import UserList from "./pages/UserList.jsx";
 import UserCreate from "./pages/UserCreate.jsx";
 import UserEdit from "./pages/UserEdit.jsx";
+import CameraView from "./pages/CameraView.jsx";
 import Layout from "./components/Layout.jsx";
 
 function App() {
@@ -123,6 +124,12 @@ function App() {
           <ProtectedRoute>
             <UserEdit />
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/cameras/:path"
+        element={
+          user ? <CameraView /> : <Navigate to="/login" />
         }
       />
     </Routes>

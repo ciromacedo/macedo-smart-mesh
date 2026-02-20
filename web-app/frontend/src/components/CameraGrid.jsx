@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import WebRTCPlayer from "./WebRTCPlayer.jsx";
 
 // Inject responsive styles once
@@ -23,6 +24,8 @@ if (typeof document !== "undefined") {
 }
 
 function CameraGrid({ cameras }) {
+  const navigate = useNavigate();
+
   return (
     <div className="camera-grid">
       {cameras.map((cam) => (
@@ -54,6 +57,24 @@ function CameraGrid({ cameras }) {
               <span style={styles.offlineText}>Offline</span>
             </div>
           )}
+          <div style={styles.actionBar}>
+            <button
+              style={{
+                ...styles.actionBtn,
+                ...(cam.ready ? {} : styles.actionBtnDisabled),
+              }}
+              onClick={() => cam.ready && navigate(`/cameras/${cam.path}`)}
+              disabled={!cam.ready}
+              title="Maximizar"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 3 21 3 21 9" />
+                <polyline points="9 21 3 21 3 15" />
+                <line x1="21" y1="3" x2="14" y2="10" />
+                <line x1="3" y1="21" x2="10" y2="14" />
+              </svg>
+            </button>
+          </div>
         </div>
       ))}
     </div>
@@ -66,6 +87,8 @@ const styles = {
     borderRadius: "8px",
     overflow: "hidden",
     background: "#16213e",
+    display: "flex",
+    flexDirection: "column",
   },
   cardHeader: {
     display: "flex",
@@ -97,6 +120,28 @@ const styles = {
   offlineText: {
     color: "#a0a0a0",
     fontSize: "0.875rem",
+  },
+  actionBar: {
+    display: "flex",
+    gap: "0.5rem",
+    padding: "0.4rem 0.75rem",
+    background: "#0f3460",
+    borderTop: "1px solid rgba(233, 69, 96, 0.2)",
+  },
+  actionBtn: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "none",
+    border: "none",
+    color: "#a0a0a0",
+    cursor: "pointer",
+    padding: "0.3rem",
+    borderRadius: "4px",
+  },
+  actionBtnDisabled: {
+    opacity: 0.3,
+    cursor: "default",
   },
 };
 
