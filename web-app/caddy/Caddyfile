@@ -1,0 +1,15 @@
+smartmesh.drmacedo.tech {
+    root * /opt/web-rtc-gateway/web-app/frontend/dist
+    file_server
+
+    try_files {path} /index.html
+
+    handle /api/* {
+        reverse_proxy localhost:3000
+    }
+
+    handle /webrtc/* {
+        uri strip_prefix /webrtc
+        reverse_proxy localhost:8889
+    }
+}

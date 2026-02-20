@@ -45,7 +45,8 @@ O **Macedo SmartMesh** permite conectar cameras IP (RTSP/ONVIF) de diferentes lo
 |  +----------------------------+     |
 |                                     |
 |  +----------------------------+     |
-|  |  Nginx (reverse proxy)    |     |
+|  |  Caddy (HTTPS + reverse   |     |
+|  |  proxy, auto TLS)         |     |
 |  +----------------------------+     |
 +-------------------------------------+
 ```
@@ -89,8 +90,8 @@ macedo-smart-mesh/
 |   |           +-- WebRTCPlayer.jsx # Player WebRTC via WHEP
 |   |-- mediamtx/
 |   |   +-- mediamtx.yml
-|   |-- nginx/
-|   |   +-- nginx.conf
+|   |-- caddy/
+|   |   +-- Caddyfile
 |   +-- docker-compose.yml
 |
 +-- infra/                      # Automacao de deploy (Ansible)
@@ -116,7 +117,7 @@ macedo-smart-mesh/
 | Roteamento SPA | [React Router](https://reactrouter.com/) | v7 |
 | Streaming (browser) | WebRTC via [WHEP](https://www.ietf.org/archive/id/draft-ietf-wish-whep-02.html) | Nativo |
 | Camera Discovery | python-onvif-zeep + WS-Discovery | Python 3.11+ |
-| Reverse Proxy | Nginx | 1.24+ |
+| Reverse Proxy + TLS | [Caddy](https://caddyserver.com/) (auto HTTPS via Let's Encrypt) | 2.x |
 | Process Manager | PM2 | 5.x |
 | Containerizacao | Docker + Docker Compose | v2 |
 | Deploy | Ansible | 2.14+ |
@@ -322,8 +323,14 @@ Health check (nao requer autenticacao).
 ```bash
 # 1. Instalar dependencias
 curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-apt-get install -y nodejs nginx
+apt-get install -y nodejs
 npm install -g pm2
+
+# 1b. Instalar Caddy
+apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
+apt update && apt install -y caddy
 
 # 2. Clonar o repositorio
 cd /opt
@@ -364,45 +371,36 @@ cd ../frontend
 npm install
 npx vite build
 
-# 7. Nginx (reverse proxy)
-cat > /etc/nginx/sites-available/smartmesh << 'NGINX'
-server {
-    listen 80;
-    server_name seu-dominio.com;
+# 7. Caddy (HTTPS automatico + reverse proxy)
+cat > /etc/caddy/Caddyfile << 'CADDY'
+smartmesh.drmacedo.tech {
+    root * /opt/web-rtc-gateway/web-app/frontend/dist
+    file_server
 
-    root /opt/macedo-smart-mesh/web-app/frontend/dist;
-    index index.html;
+    try_files {path} /index.html
 
-    location / {
-        try_files $uri $uri/ /index.html;
+    handle /api/* {
+        reverse_proxy localhost:3000
     }
 
-    location /api/ {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-
-    location /webrtc/ {
-        proxy_pass http://127.0.0.1:8889/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
+    handle /webrtc/* {
+        uri strip_prefix /webrtc
+        reverse_proxy localhost:8889
     }
 }
-NGINX
+CADDY
 
-ln -sf /etc/nginx/sites-available/smartmesh /etc/nginx/sites-enabled/
-rm -f /etc/nginx/sites-enabled/default
-nginx -t && systemctl reload nginx
+ufw allow 443/tcp
+systemctl enable --now caddy
+# Caddy obtem certificado SSL automaticamente via Let's Encrypt
 ```
 
 ### Portas necessarias no servidor
 
 | Porta | Protocolo | Servico |
 |---|---|---|
-| 80 | TCP | Nginx (HTTP) |
-| 443 | TCP | Nginx (HTTPS, opcional) |
+| 80 | TCP | Caddy (HTTP → redireciona para HTTPS) |
+| 443 | TCP | Caddy (HTTPS, TLS automatico via Let's Encrypt) |
 | 8554 | TCP | MediaMTX RTSP (recebe streams dos gateways) |
 | 8889 | TCP | MediaMTX WebRTC HTTP |
 | 8189 | UDP | MediaMTX WebRTC ICE |
@@ -433,7 +431,7 @@ Servidor MediaMTX (recebe via RTSP, porta 8554)
     |
     |-- API /v3/paths/list --> Backend Fastify --> GET /api/cameras
     |
-    +-- WebRTC WHEP --> Nginx /webrtc/* --> Browser (Dashboard)
+    +-- WebRTC WHEP --> Caddy /webrtc/* --> Browser (Dashboard)
 ```
 
 ## Frontend
@@ -503,21 +501,21 @@ O frontend utiliza um tema escuro com a seguinte paleta:
 
 ### WebRTC nao conecta no browser
 
-1. Verifique se o Nginx esta fazendo proxy correto para `/webrtc/`
+1. Verifique se o Caddy esta fazendo proxy correto para `/webrtc/`
 2. Verifique se o MediaMTX WebRTC esta ouvindo na porta 8889
 3. Em redes restritivas, pode ser necessario configurar um servidor TURN (Coturn)
 
 ## Roadmap
 
+- [x] HTTPS com Let's Encrypt (Caddy, auto TLS)
 - [ ] Autenticacao com banco de dados (PostgreSQL)
 - [ ] Gerenciamento de usuarios (CRUD)
 - [ ] Gravacao de video (recording)
 - [ ] Alertas e notificacoes
-- [ ] Deteccao de movimento com IA
+- [ ] Microservico de CV no Gateway (Raspberry Pi) — YOLOv8n para deteccao de pessoas/veiculos em tempo real. Cada gateway processa localmente e envia apenas metadados (bounding boxes + labels) ao servidor central via API. Distribuicao round-robin entre cameras para otimizar uso de CPU/GPU no Pi.
 - [ ] Suporte a PTZ (Pan-Tilt-Zoom) via ONVIF
 - [ ] Configuracao de cameras via interface web
 - [ ] Deploy automatizado com Ansible
-- [ ] HTTPS com Let's Encrypt
 - [ ] App mobile (React Native)
 
 ## Licenca
