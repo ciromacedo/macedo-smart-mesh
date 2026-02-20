@@ -24,9 +24,11 @@ function Login({ onLogin }) {
     <div style={styles.container}>
       <form onSubmit={handleSubmit} style={styles.form}>
         <div style={styles.logoSection}>
-          <h1 style={styles.logo}>
-            Macedo <span style={styles.logoAccent}>SmartMesh</span>
-          </h1>
+          <img
+            src="/images/MacedoSmartMesh.png"
+            alt="Macedo SmartMesh"
+            style={styles.logoImage}
+          />
           <p style={styles.subtitle}>Videovigilância Inteligente</p>
         </div>
 
@@ -85,14 +87,10 @@ const styles = {
     textAlign: "center",
     marginBottom: "2rem",
   },
-  logo: {
-    fontSize: "2.5rem",
-    fontWeight: "bold",
-    margin: 0,
-    color: "white",
-  },
-  logoAccent: {
-    color: "#e94560",
+  logoImage: {
+    maxWidth: "220px",
+    width: "100%",
+    height: "auto",
   },
   subtitle: {
     color: "#a0a0a0",
