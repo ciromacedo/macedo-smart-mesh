@@ -1,91 +1,55 @@
 services:
-  mediamtx:
-    image: bluenviron/mediamtx:latest
-    container_name: server-mediamtx
-    restart: unless-stopped
-    ports:
-      - "8554:8554"   # RTSP
-      - "8889:8889"   # WebRTC/WHIP/WHEP
-      - "8189:8189/udp" # WebRTC UDP
-    volumes:
-      - ./mediamtx/mediamtx.yml:/mediamtx.yml
-
-  coturn:
-    image: coturn/coturn:latest
-    container_name: server-coturn
-    restart: unless-stopped
-    network_mode: host
-    environment:
-      - TURN_USER=${TURN_USER:-webrtc}
-      - TURN_PASSWORD=${TURN_PASSWORD}
-    volumes:
-      - ./coturn/turnserver.conf:/etc/turnserver.conf
-
-  backend:
-    build:
-      context: ./backend
-    container_name: server-backend
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
-      - MEDIAMTX_API=${MEDIAMTX_API:-http://mediamtx:9997}
-      - JWT_SECRET=${JWT_SECRET}
-      - ADMIN_EMAIL=${ADMIN_EMAIL}
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - ADMIN_NAME=${ADMIN_NAME:-Administrador}
-    depends_on:
-      - postgres
-      - redis
-      - mediamtx
-
-  frontend:
-    build:
-      context: ./frontend
-    container_name: server-frontend
-    restart: unless-stopped
-    ports:
-      - "5173:80"
-
   postgres:
     image: postgres:16-alpine
-    container_name: server-postgres
+    container_name: smartmech-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-webrtc_gateway}
       POSTGRES_USER: ${POSTGRES_USER:-app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "127.0.0.1:5432:5432"
+    networks:
+      - smartmech
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-app} -d ${POSTGRES_DB:-webrtc_gateway}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: server-redis
+  backend:
+    build:
+      context: ./backend
+    container_name: smartmech-backend
     restart: unless-stopped
     ports:
-      - "127.0.0.1:6379:6379"
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-webrtc_gateway}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - MEDIAMTX_API=${MEDIAMTX_API:-http://host.docker.internal:9997}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smartmech
 
-  caddy:
-    image: caddy:2-alpine
-    container_name: server-caddy
+  frontend:
+    build:
+      context: ./frontend
+    container_name: smartmech-frontend
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
-    volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
     depends_on:
       - backend
-      - frontend
-      - mediamtx
+    networks:
+      - smartmech
+
+networks:
+  smartmech:
+    name: smartmech
+    driver: bridge
 
 volumes:
   pgdata:
-  caddy_data:
-  caddy_config:

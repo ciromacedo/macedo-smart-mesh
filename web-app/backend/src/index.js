@@ -11,44 +11,45 @@ fastify.register(require("./services/UserService"));
 fastify.register(require("./services/TokenService"));
 
 // --- Health check ---
-fastify.get("/api/health", async () => {
-  return { status: "ok" };
-});
+fastify.register(async function routes(app) {
+  app.get("/api/health", async () => {
+    return { status: "ok" };
+  });
 
-// --- Cameras (MediaMTX) ---
-fastify.get(
-  "/api/cameras",
-  { onRequest: [fastify.authenticate] },
-  async (request, reply) => {
-    const mediamtxApi =
-      process.env.MEDIAMTX_API || "http://localhost:9997";
+  app.get(
+    "/api/cameras",
+    { onRequest: [app.authenticate] },
+    async (request, reply) => {
+      const mediamtxApi =
+        process.env.MEDIAMTX_API || "http://localhost:9997";
 
-    try {
-      const res = await fetch(`${mediamtxApi}/v3/paths/list`);
-      if (!res.ok) {
-        throw new Error(`MediaMTX responded with ${res.status}`);
+      try {
+        const res = await fetch(`${mediamtxApi}/v3/paths/list`);
+        if (!res.ok) {
+          throw new Error(`MediaMTX responded with ${res.status}`);
+        }
+
+        const data = await res.json();
+        const items = data.items || [];
+
+        const cameras = items.map((item) => ({
+          id: item.name.replace(/\//g, "-"),
+          name: item.name,
+          path: item.name,
+          ready: item.ready || false,
+          sourceType: item.sourceType || "unknown",
+        }));
+
+        return { cameras };
+      } catch (err) {
+        app.log.error(err, "Failed to fetch cameras from MediaMTX");
+        return reply
+          .code(502)
+          .send({ error: "Não foi possível conectar ao MediaMTX" });
       }
-
-      const data = await res.json();
-      const items = data.items || [];
-
-      const cameras = items.map((item) => ({
-        id: item.name.replace(/\//g, "-"),
-        name: item.name,
-        path: item.name,
-        ready: item.ready || false,
-        sourceType: item.sourceType || "unknown",
-      }));
-
-      return { cameras };
-    } catch (err) {
-      fastify.log.error(err, "Failed to fetch cameras from MediaMTX");
-      return reply
-        .code(502)
-        .send({ error: "Não foi possível conectar ao MediaMTX" });
     }
-  }
-);
+  );
+});
 
 // --- Start ---
 const start = async () => {

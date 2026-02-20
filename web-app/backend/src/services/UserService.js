@@ -1,13 +1,13 @@
 const userBusiness = require("../business/UserBusiness");
 
 async function userService(fastify) {
-  fastify.addHook("onRequest", fastify.authenticate);
+  const auth = { onRequest: [fastify.authenticate] };
 
-  fastify.get("/api/users", async () => {
+  fastify.get("/api/users", auth, async () => {
     return userBusiness.findAll();
   });
 
-  fastify.get("/api/users/:id", async (request, reply) => {
+  fastify.get("/api/users/:id", auth, async (request, reply) => {
     const user = await userBusiness.findById(Number(request.params.id));
     if (!user) {
       return reply.code(404).send({ error: "Usuário não encontrado" });
@@ -15,7 +15,7 @@ async function userService(fastify) {
     return user;
   });
 
-  fastify.post("/api/users", async (request, reply) => {
+  fastify.post("/api/users", auth, async (request, reply) => {
     try {
       const user = await userBusiness.create(request.body);
       return reply.code(201).send(user);
@@ -26,7 +26,7 @@ async function userService(fastify) {
     }
   });
 
-  fastify.put("/api/users/:id", async (request, reply) => {
+  fastify.put("/api/users/:id", auth, async (request, reply) => {
     try {
       const user = await userBusiness.update(
         Number(request.params.id),
@@ -40,7 +40,7 @@ async function userService(fastify) {
     }
   });
 
-  fastify.delete("/api/users/:id", async (request, reply) => {
+  fastify.delete("/api/users/:id", auth, async (request, reply) => {
     try {
       await userBusiness.delete(Number(request.params.id));
       return reply.code(204).send();
