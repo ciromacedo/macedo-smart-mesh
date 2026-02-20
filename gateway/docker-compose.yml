@@ -24,10 +24,10 @@ services:
     network_mode: host
     restart: unless-stopped
     environment:
-      - ONVIF_USER=admin
-      - ONVIF_PASSWORD=Oliveir4m4cedo
-      - MEDIAMTX_API=http://host.docker.internal:9997
-      - DISCOVERY_INTERVAL=60
-      - SCAN_RANGE=192.168.15.1-254
+      - ONVIF_USER=${ONVIF_USER}
+      - ONVIF_PASSWORD=${ONVIF_PASSWORD}
+      - MEDIAMTX_API=${MEDIAMTX_API}
+      - DISCOVERY_INTERVAL=${DISCOVERY_INTERVAL:-60}
+      - SCAN_RANGE=${SCAN_RANGE}
     depends_on:
       - mediamtx

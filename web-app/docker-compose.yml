@@ -15,6 +15,9 @@ services:
     container_name: server-coturn
     restart: unless-stopped
     network_mode: host
+    environment:
+      - TURN_USER=${TURN_USER:-webrtc}
+      - TURN_PASSWORD=${TURN_PASSWORD}
     volumes:
       - ./coturn/turnserver.conf:/etc/turnserver.conf
 
@@ -26,9 +29,13 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=postgres://app:secret@postgres:5432/webrtc_gateway
-      - REDIS_URL=redis://redis:6379
-      - MEDIAMTX_API=http://mediamtx:9997
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - MEDIAMTX_API=${MEDIAMTX_API:-http://mediamtx:9997}
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - ADMIN_NAME=${ADMIN_NAME:-Administrador}
     depends_on:
       - postgres
       - redis
@@ -47,9 +54,9 @@ services:
     container_name: server-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: webrtc_gateway
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: ${POSTGRES_DB:-webrtc_gateway}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:

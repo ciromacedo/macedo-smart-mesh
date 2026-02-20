@@ -4,16 +4,16 @@ const bcrypt = require("bcryptjs");
 // --- Plugins ---
 fastify.register(require("@fastify/cors"), { origin: true });
 fastify.register(require("@fastify/jwt"), {
-  secret: process.env.JWT_SECRET || "vigiai-super-secret-key-change-in-prod",
+  secret: process.env.JWT_SECRET || "changeme-generate-a-strong-secret",
   sign: { expiresIn: "24h" },
 });
 
-// --- Fixed user ---
+// --- Fixed user (credentials from environment) ---
 const FIXED_USER = {
   id: "1",
-  name: "Administrador",
-  email: "adm@email.com",
-  passwordHash: bcrypt.hashSync("123456", 10),
+  name: process.env.ADMIN_NAME || "Administrador",
+  email: process.env.ADMIN_EMAIL || "admin@example.com",
+  passwordHash: bcrypt.hashSync(process.env.ADMIN_PASSWORD || "changeme", 10),
 };
 
 // --- Auth decorator ---
