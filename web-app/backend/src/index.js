@@ -1,77 +1,21 @@
 const fastify = require("fastify")({ logger: true });
-const bcrypt = require("bcryptjs");
+const { testConnection, closePool } = require("./config/database");
 
 // --- Plugins ---
 fastify.register(require("@fastify/cors"), { origin: true });
-fastify.register(require("@fastify/jwt"), {
-  secret: process.env.JWT_SECRET || "changeme-generate-a-strong-secret",
-  sign: { expiresIn: "24h" },
-});
+fastify.register(require("./plugins/auth"));
 
-// --- Fixed user (credentials from environment) ---
-const FIXED_USER = {
-  id: "1",
-  name: process.env.ADMIN_NAME || "Administrador",
-  email: process.env.ADMIN_EMAIL || "admin@example.com",
-  passwordHash: bcrypt.hashSync(process.env.ADMIN_PASSWORD || "changeme", 10),
-};
+// --- Services ---
+fastify.register(require("./services/AuthService"));
+fastify.register(require("./services/UserService"));
+fastify.register(require("./services/TokenService"));
 
-// --- Auth decorator ---
-fastify.decorate("authenticate", async function (request, reply) {
-  try {
-    await request.jwtVerify();
-  } catch (err) {
-    reply.code(401).send({ error: "Token inválido ou expirado" });
-  }
-});
-
-// --- Routes ---
-
-// Health check
+// --- Health check ---
 fastify.get("/api/health", async () => {
   return { status: "ok" };
 });
 
-// Login
-fastify.post("/api/auth/login", async (request, reply) => {
-  const { email, password } = request.body || {};
-
-  if (!email || !password) {
-    return reply.code(400).send({ error: "Email e senha são obrigatórios" });
-  }
-
-  if (email !== FIXED_USER.email) {
-    return reply.code(401).send({ error: "Credenciais inválidas" });
-  }
-
-  const valid = await bcrypt.compare(password, FIXED_USER.passwordHash);
-  if (!valid) {
-    return reply.code(401).send({ error: "Credenciais inválidas" });
-  }
-
-  const token = fastify.jwt.sign({
-    id: FIXED_USER.id,
-    email: FIXED_USER.email,
-    name: FIXED_USER.name,
-  });
-
-  return { token };
-});
-
-// Current user
-fastify.get(
-  "/api/auth/me",
-  { onRequest: [fastify.authenticate] },
-  async (request) => {
-    return {
-      id: request.user.id,
-      email: request.user.email,
-      name: request.user.name,
-    };
-  }
-);
-
-// Cameras list (from MediaMTX API)
+// --- Cameras (MediaMTX) ---
 fastify.get(
   "/api/cameras",
   { onRequest: [fastify.authenticate] },
@@ -109,11 +53,25 @@ fastify.get(
 // --- Start ---
 const start = async () => {
   try {
+    await testConnection();
+    fastify.log.info("PostgreSQL connected");
+
     await fastify.listen({ port: 3000, host: "0.0.0.0" });
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
   }
 };
+
+// --- Graceful shutdown ---
+const shutdown = async () => {
+  fastify.log.info("Shutting down...");
+  await fastify.close();
+  await closePool();
+  process.exit(0);
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
 start();
