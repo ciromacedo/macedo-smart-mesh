@@ -1,4 +1,5 @@
-# MediaMTX - Gateway Configuration
+# MediaMTX - Gateway Configuration (base template)
+# Paths are generated at runtime by entrypoint.sh
 # Docs: https://github.com/bluenviron/mediamtx
 
 ###############################################
@@ -19,7 +20,7 @@ authInternalUsers:
       - action: playback
 
 ###############################################
-# RTSP server (recebe streams das câmeras)
+# RTSP server (recebe streams das cameras)
 rtsp: true
 rtspAddress: :8554
 rtspTransports: [tcp, udp]
@@ -28,16 +29,9 @@ rtspTransports: [tcp, udp]
 # WebRTC
 webrtc: true
 webrtcAddress: :8889
-webrtcAdditionalHosts: [209.38.118.167]
 webrtcLocalUDPAddress: :8189
 
 ###############################################
 # HLS (fallback para testes no browser)
 hls: true
 hlsAddress: :8888
-
-###############################################
-# Paths
-paths:
-  all_others:
-    # Aceita streams publicados dinamicamente (ex: ONVIF discovery)

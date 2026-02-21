@@ -28,6 +28,10 @@ Thumbs.db
 # Docker
 docker-compose.override.yml
 
+# Camera config (contains credentials)
+gateway/config/cameras.yml
+!gateway/config/cameras.yml.example
+
 # Certificates and secrets
 *.pem
 *.key

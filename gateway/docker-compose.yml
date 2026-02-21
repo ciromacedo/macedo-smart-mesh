@@ -1,33 +1,20 @@
 services:
   mediamtx:
-    image: bluenviron/mediamtx:latest-ffmpeg
-    container_name: gateway-mediamtx
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartmesh-gateway
     restart: unless-stopped
-    ports:
-      - "8554:8554"       # RTSP
-      - "8000:8000/udp"   # RTP UDP
-      - "8001:8001/udp"   # RTCP UDP
-      - "8889:8889"       # WebRTC HTTP
-      - "8189:8189/udp"   # WebRTC ICE UDP
-      - "8888:8888"       # HLS
-      - "1935:1935"       # RTMP
-      - "9997:9997"       # API
+    network_mode: host
     volumes:
-      - ./mediamtx/mediamtx.yml:/mediamtx.yml
+      - ./config/cameras.yml:/config/cameras.yml:ro
+      - ./mediamtx/mediamtx.base.yml:/mediamtx.base.yml:ro
     environment:
       - MTX_LOGLEVEL=info
-
-  onvif-discovery:
-    build:
-      context: ./onvif-discovery
-    container_name: gateway-onvif
-    network_mode: host
-    restart: unless-stopped
-    environment:
-      - ONVIF_USER=${ONVIF_USER}
-      - ONVIF_PASSWORD=${ONVIF_PASSWORD}
-      - MEDIAMTX_API=${MEDIAMTX_API}
-      - DISCOVERY_INTERVAL=${DISCOVERY_INTERVAL:-60}
-      - SCAN_RANGE=${SCAN_RANGE}
-    depends_on:
-      - mediamtx
+      - RELAY_SERVER=${RELAY_SERVER:?RELAY_SERVER is required}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9997/v3/paths/list"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
