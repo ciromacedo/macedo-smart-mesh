@@ -1,22 +1,37 @@
 import { useState, useEffect } from "react";
-import CameraGrid from "../components/CameraGrid.jsx";
+import DeviceGrid from "../components/DeviceGrid.jsx";
 
 function Dashboard() {
-  const [cameras, setCameras] = useState([]);
+  const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    const headers = { Authorization: `Bearer ${token}` };
 
-    fetch("/api/cameras", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Falha ao buscar cameras");
-        return res.json();
+    Promise.all([
+      fetch("/api/iot-devices", { headers }).then((r) => r.json()),
+      fetch("/api/cameras", { headers })
+        .then((r) => r.ok ? r.json() : { cameras: [] })
+        .catch(() => ({ cameras: [] })),
+    ])
+      .then(([iotDevices, cameraData]) => {
+        const cameraMap = {};
+        for (const cam of cameraData.cameras || []) {
+          cameraMap[cam.name] = cam;
+        }
+
+        const merged = (Array.isArray(iotDevices) ? iotDevices : []).map((dev) => {
+          if (dev.type === "CAMERA") {
+            const cam = cameraMap[dev.name] || {};
+            return { ...dev, ready: cam.ready || false, path: cam.path || dev.name };
+          }
+          return dev;
+        });
+
+        setDevices(merged);
       })
-      .then((data) => setCameras(data.cameras || []))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
@@ -25,18 +40,14 @@ function Dashboard() {
     <div>
       <h2 style={styles.title}>Painel de Controle</h2>
 
-      {loading && (
-        <div style={styles.status}>Carregando...</div>
-      )}
+      {loading && <div style={styles.status}>Carregando...</div>}
       {error && <div style={styles.error}>{error}</div>}
-      {!loading && !error && cameras.length === 0 && (
+      {!loading && !error && devices.length === 0 && (
         <div style={styles.status}>
-          Nenhuma camera encontrada. Verifique se o gateway esta ativo.
+          Nenhum dispositivo registrado. Verifique se o gateway está ativo.
         </div>
       )}
-      {!loading && cameras.length > 0 && (
-        <CameraGrid cameras={cameras} />
-      )}
+      {!loading && devices.length > 0 && <DeviceGrid devices={devices} />}
     </div>
   );
 }
