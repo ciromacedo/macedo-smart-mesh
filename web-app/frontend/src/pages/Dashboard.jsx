@@ -23,10 +23,10 @@ function Dashboard() {
 
   return (
     <div>
-      <h2 style={styles.title}>Cameras</h2>
+      <h2 style={styles.title}>Painel de Controle</h2>
 
       {loading && (
-        <div style={styles.status}>Carregando cameras...</div>
+        <div style={styles.status}>Carregando...</div>
       )}
       {error && <div style={styles.error}>{error}</div>}
       {!loading && !error && cameras.length === 0 && (
