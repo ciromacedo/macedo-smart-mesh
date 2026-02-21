@@ -10,6 +10,9 @@ import UserEdit from "./pages/UserEdit.jsx";
 import CameraView from "./pages/CameraView.jsx";
 import GatewayList from "./pages/GatewayList.jsx";
 import GatewayCreate from "./pages/GatewayCreate.jsx";
+import OrganizationList from "./pages/OrganizationList.jsx";
+import OrganizationCreate from "./pages/OrganizationCreate.jsx";
+import OrganizationEdit from "./pages/OrganizationEdit.jsx";
 import Layout from "./components/Layout.jsx";
 
 function App() {
@@ -147,6 +150,30 @@ function App() {
         element={
           <ProtectedRoute>
             <GatewayCreate />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/organizations"
+        element={
+          <ProtectedRoute>
+            <OrganizationList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/organizations/new"
+        element={
+          <ProtectedRoute>
+            <OrganizationCreate />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/organizations/:id/edit"
+        element={
+          <ProtectedRoute>
+            <OrganizationEdit />
           </ProtectedRoute>
         }
       />
