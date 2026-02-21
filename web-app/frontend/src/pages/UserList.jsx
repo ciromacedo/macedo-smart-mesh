@@ -67,6 +67,7 @@ function UserList() {
               <tr>
                 <th style={styles.th}>Nome</th>
                 <th style={styles.th}>Email</th>
+                <th style={styles.th}>Organização</th>
                 <th style={{ ...styles.th, width: 120, textAlign: "center" }}>Acoes</th>
               </tr>
             </thead>
@@ -75,6 +76,7 @@ function UserList() {
                 <tr key={u.id}>
                   <td style={styles.td}>{u.name}</td>
                   <td style={styles.td}>{u.email}</td>
+                  <td style={{ ...styles.td, color: "#a0a0a0" }}>{u.organization_description || "—"}</td>
                   <td style={{ ...styles.td, textAlign: "center" }}>
                     <Link to={`/users/${u.id}/edit`} style={styles.iconBtn} title="Editar">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a0a0a0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

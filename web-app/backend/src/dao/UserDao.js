@@ -3,14 +3,22 @@ const { getPool } = require("../config/database");
 class UserDao {
   async findAll() {
     const { rows } = await getPool().query(
-      "SELECT id, name, email, password FROM users ORDER BY id"
+      `SELECT u.id, u.name, u.email, u.password, u.organizacao_fk,
+              o.description AS organization_description
+       FROM users u
+       LEFT JOIN organizations o ON o.id = u.organizacao_fk
+       ORDER BY u.id`
     );
     return rows;
   }
 
   async findById(id) {
     const { rows } = await getPool().query(
-      "SELECT id, name, email, password FROM users WHERE id = $1",
+      `SELECT u.id, u.name, u.email, u.password, u.organizacao_fk,
+              o.description AS organization_description
+       FROM users u
+       LEFT JOIN organizations o ON o.id = u.organizacao_fk
+       WHERE u.id = $1`,
       [id]
     );
     return rows[0] || null;
@@ -18,21 +26,21 @@ class UserDao {
 
   async findByEmail(email) {
     const { rows } = await getPool().query(
-      "SELECT id, name, email, password FROM users WHERE email = $1",
+      "SELECT id, name, email, password, organizacao_fk FROM users WHERE email = $1",
       [email]
     );
     return rows[0] || null;
   }
 
-  async create({ name, email, password }) {
+  async create({ name, email, password, organizacao_fk }) {
     const { rows } = await getPool().query(
-      "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email",
-      [name, email, password]
+      "INSERT INTO users (name, email, password, organizacao_fk) VALUES ($1, $2, $3, $4) RETURNING id, name, email, organizacao_fk",
+      [name, email, password, organizacao_fk]
     );
     return rows[0];
   }
 
-  async update(id, { name, email, password }) {
+  async update(id, { name, email, password, organizacao_fk }) {
     const fields = [];
     const values = [];
     let idx = 1;
@@ -49,12 +57,16 @@ class UserDao {
       fields.push(`password = $${idx++}`);
       values.push(password);
     }
+    if (organizacao_fk !== undefined) {
+      fields.push(`organizacao_fk = $${idx++}`);
+      values.push(organizacao_fk);
+    }
 
     if (fields.length === 0) return this.findById(id);
 
     values.push(id);
     const { rows } = await getPool().query(
-      `UPDATE users SET ${fields.join(", ")} WHERE id = $${idx} RETURNING id, name, email`,
+      `UPDATE users SET ${fields.join(", ")} WHERE id = $${idx} RETURNING id, name, email, organizacao_fk`,
       values
     );
     return rows[0] || null;

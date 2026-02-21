@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -6,8 +6,21 @@ function UserCreate() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [organizacaoFk, setOrganizacaoFk] = useState("");
+  const [organizations, setOrganizations] = useState([]);
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    fetch("/api/organizations", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setOrganizations(Array.isArray(data) ? data : []))
+      .catch(() => toast.error("Falha ao carregar organizações"));
+  }, []);
 
   const validate = () => {
     if (!name.trim()) {
@@ -31,6 +44,10 @@ function UserCreate() {
       toast.error("A senha deve ter pelo menos 4 caracteres.");
       return false;
     }
+    if (!organizacaoFk) {
+      toast.error("Selecione uma organização.");
+      return false;
+    }
     return true;
   };
 
@@ -40,14 +57,13 @@ function UserCreate() {
 
     setSaving(true);
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch("/api/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, organizacao_fk: Number(organizacaoFk) }),
       });
 
       const data = await res.json();
@@ -97,6 +113,20 @@ function UserCreate() {
             placeholder="Minimo 4 caracteres"
             style={styles.input}
           />
+        </div>
+
+        <div style={styles.field}>
+          <label style={styles.label}>Organização <span style={styles.required}>*</span></label>
+          <select
+            value={organizacaoFk}
+            onChange={(e) => setOrganizacaoFk(e.target.value)}
+            style={styles.select}
+          >
+            <option value="">Selecione uma organização</option>
+            {organizations.map((org) => (
+              <option key={org.id} value={org.id}>{org.description}</option>
+            ))}
+          </select>
         </div>
 
         <div style={styles.actions}>
@@ -155,6 +185,18 @@ const styles = {
     fontSize: "1rem",
     outline: "none",
     boxSizing: "border-box",
+  },
+  select: {
+    width: "100%",
+    padding: "0.75rem",
+    background: "#1a1a2e",
+    border: "1px solid #0f3460",
+    borderRadius: "6px",
+    color: "white",
+    fontSize: "1rem",
+    outline: "none",
+    boxSizing: "border-box",
+    cursor: "pointer",
   },
   actions: {
     display: "flex",

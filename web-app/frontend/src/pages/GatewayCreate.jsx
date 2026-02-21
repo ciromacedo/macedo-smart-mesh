@@ -1,12 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 function GatewayCreate() {
   const [name, setName] = useState("");
+  const [organizacaoFk, setOrganizacaoFk] = useState("");
+  const [organizations, setOrganizations] = useState([]);
   const [saving, setSaving] = useState(false);
   const [createdKey, setCreatedKey] = useState(null);
   const navigate = useNavigate();
+
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    fetch("/api/organizations", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setOrganizations(Array.isArray(data) ? data : []))
+      .catch(() => toast.error("Falha ao carregar organizações"));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -14,17 +27,20 @@ function GatewayCreate() {
       toast.error("O campo Nome e obrigatorio.");
       return;
     }
+    if (!organizacaoFk) {
+      toast.error("Selecione uma organização.");
+      return;
+    }
 
     setSaving(true);
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch("/api/gateways", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name }),
+        body: JSON.stringify({ name, organizacao_fk: Number(organizacaoFk) }),
       });
 
       const data = await res.json();
@@ -103,6 +119,22 @@ function GatewayCreate() {
           />
         </div>
 
+        <div style={styles.field}>
+          <label style={styles.label}>
+            Organização <span style={styles.required}>*</span>
+          </label>
+          <select
+            value={organizacaoFk}
+            onChange={(e) => setOrganizacaoFk(e.target.value)}
+            style={styles.select}
+          >
+            <option value="">Selecione uma organização</option>
+            {organizations.map((org) => (
+              <option key={org.id} value={org.id}>{org.description}</option>
+            ))}
+          </select>
+        </div>
+
         <div style={styles.actions}>
           <button type="submit" disabled={saving} style={styles.submitBtn}>
             {saving ? "Criando..." : "Criar Gateway"}
@@ -159,6 +191,18 @@ const styles = {
     fontSize: "1rem",
     outline: "none",
     boxSizing: "border-box",
+  },
+  select: {
+    width: "100%",
+    padding: "0.75rem",
+    background: "#1a1a2e",
+    border: "1px solid #0f3460",
+    borderRadius: "6px",
+    color: "white",
+    fontSize: "1rem",
+    outline: "none",
+    boxSizing: "border-box",
+    cursor: "pointer",
   },
   actions: {
     display: "flex",

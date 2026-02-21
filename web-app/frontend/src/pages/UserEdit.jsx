@@ -8,22 +8,28 @@ function UserEdit() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [organizacaoFk, setOrganizacaoFk] = useState("");
+  const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const token = localStorage.getItem("token");
 
   useEffect(() => {
-    fetch(`/api/users/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
+    Promise.all([
+      fetch(`/api/users/${id}`, { headers: { Authorization: `Bearer ${token}` } }).then((res) => {
         if (!res.ok) throw new Error("Usuario nao encontrado");
         return res.json();
-      })
-      .then((data) => {
-        setName(data.name || "");
-        setEmail(data.email || "");
+      }),
+      fetch("/api/organizations", { headers: { Authorization: `Bearer ${token}` } }).then((res) =>
+        res.json()
+      ),
+    ])
+      .then(([user, orgs]) => {
+        setName(user.name || "");
+        setEmail(user.email || "");
+        setOrganizacaoFk(user.organizacao_fk ? String(user.organizacao_fk) : "");
+        setOrganizations(Array.isArray(orgs) ? orgs : []);
       })
       .catch((err) => toast.error(err.message))
       .finally(() => setLoading(false));
@@ -47,6 +53,10 @@ function UserEdit() {
       toast.error("A senha deve ter pelo menos 4 caracteres.");
       return false;
     }
+    if (!organizacaoFk) {
+      toast.error("Selecione uma organização.");
+      return false;
+    }
     return true;
   };
 
@@ -56,7 +66,7 @@ function UserEdit() {
 
     setSaving(true);
     try {
-      const body = { name, email };
+      const body = { name, email, organizacao_fk: Number(organizacaoFk) };
       if (password) body.password = password;
 
       const res = await fetch(`/api/users/${id}`, {
@@ -121,6 +131,20 @@ function UserEdit() {
           />
         </div>
 
+        <div style={styles.field}>
+          <label style={styles.label}>Organização <span style={styles.required}>*</span></label>
+          <select
+            value={organizacaoFk}
+            onChange={(e) => setOrganizacaoFk(e.target.value)}
+            style={styles.select}
+          >
+            <option value="">Selecione uma organização</option>
+            {organizations.map((org) => (
+              <option key={org.id} value={org.id}>{org.description}</option>
+            ))}
+          </select>
+        </div>
+
         <div style={styles.actions}>
           <button type="submit" disabled={saving} style={styles.submitBtn}>
             {saving ? "Salvando..." : "Salvar"}
@@ -183,6 +207,18 @@ const styles = {
     fontSize: "1rem",
     outline: "none",
     boxSizing: "border-box",
+  },
+  select: {
+    width: "100%",
+    padding: "0.75rem",
+    background: "#1a1a2e",
+    border: "1px solid #0f3460",
+    borderRadius: "6px",
+    color: "white",
+    fontSize: "1rem",
+    outline: "none",
+    boxSizing: "border-box",
+    cursor: "pointer",
   },
   actions: {
     display: "flex",

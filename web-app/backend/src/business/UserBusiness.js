@@ -18,9 +18,12 @@ class UserBusiness {
     return userDao.findByEmail(email);
   }
 
-  async create({ name, email, password }) {
+  async create({ name, email, password, organizacao_fk }) {
     if (!name || !email || !password) {
       throw { statusCode: 400, message: "Nome, email e senha são obrigatórios" };
+    }
+    if (!organizacao_fk) {
+      throw { statusCode: 400, message: "Organização é obrigatória" };
     }
 
     const existing = await userDao.findByEmail(email);
@@ -29,10 +32,10 @@ class UserBusiness {
     }
 
     const hash = await bcrypt.hash(password, 10);
-    return userDao.create({ name, email, password: hash });
+    return userDao.create({ name, email, password: hash, organizacao_fk: Number(organizacao_fk) });
   }
 
-  async update(id, { name, email, password }) {
+  async update(id, { name, email, password, organizacao_fk }) {
     const user = await userDao.findById(id);
     if (!user) {
       throw { statusCode: 404, message: "Usuário não encontrado" };
@@ -48,6 +51,9 @@ class UserBusiness {
     const data = { name, email };
     if (password) {
       data.password = await bcrypt.hash(password, 10);
+    }
+    if (organizacao_fk !== undefined) {
+      data.organizacao_fk = Number(organizacao_fk);
     }
 
     return userDao.update(id, data);

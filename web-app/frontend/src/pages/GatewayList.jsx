@@ -96,6 +96,7 @@ function GatewayList() {
             <thead>
               <tr>
                 <th style={styles.th}>Nome</th>
+                <th style={styles.th}>Organização</th>
                 <th style={styles.th}>Prefixo da Key</th>
                 <th style={{ ...styles.th, textAlign: "center" }}>Status</th>
                 <th style={styles.th}>Ultimo acesso</th>
@@ -106,6 +107,7 @@ function GatewayList() {
               {gateways.map((g) => (
                 <tr key={g.id}>
                   <td style={styles.td}>{g.name}</td>
+                  <td style={{ ...styles.td, color: "#a0a0a0" }}>{g.organization_description || "—"}</td>
                   <td style={{ ...styles.td, fontFamily: "monospace", color: "#a0a0a0" }}>
                     {g.api_key_prefix}...
                   </td>

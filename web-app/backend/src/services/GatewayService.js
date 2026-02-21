@@ -17,8 +17,8 @@ async function gatewayService(fastify) {
   // POST /api/gateways — cria gateway (protegido), retorna api_key uma vez
   fastify.post("/api/gateways", auth, async (request, reply) => {
     try {
-      const { name } = request.body || {};
-      const gateway = await GatewayBusiness.create({ name });
+      const { name, organizacao_fk } = request.body || {};
+      const gateway = await GatewayBusiness.create({ name, organizacao_fk });
       return reply.code(201).send({ gateway });
     } catch (err) {
       const code = err.statusCode || 500;

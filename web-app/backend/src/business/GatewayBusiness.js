@@ -36,9 +36,12 @@ class GatewayBusiness {
     return gateway;
   }
 
-  async create({ name }) {
+  async create({ name, organizacao_fk }) {
     if (!name || !name.trim()) {
       throw { statusCode: 400, message: "Nome é obrigatório" };
+    }
+    if (!organizacao_fk) {
+      throw { statusCode: 400, message: "Organização é obrigatória" };
     }
 
     const apiKey = this._generateApiKey();
@@ -49,6 +52,7 @@ class GatewayBusiness {
       name: name.trim(),
       api_key_hash,
       api_key_prefix,
+      organizacao_fk: Number(organizacao_fk),
     });
 
     return { ...gateway, api_key: apiKey };
