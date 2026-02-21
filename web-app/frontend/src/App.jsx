@@ -8,6 +8,8 @@ import UserList from "./pages/UserList.jsx";
 import UserCreate from "./pages/UserCreate.jsx";
 import UserEdit from "./pages/UserEdit.jsx";
 import CameraView from "./pages/CameraView.jsx";
+import GatewayList from "./pages/GatewayList.jsx";
+import GatewayCreate from "./pages/GatewayCreate.jsx";
 import Layout from "./components/Layout.jsx";
 
 function App() {
@@ -130,6 +132,22 @@ function App() {
         path="/cameras/:path"
         element={
           user ? <CameraView /> : <Navigate to="/login" />
+        }
+      />
+      <Route
+        path="/gateways"
+        element={
+          <ProtectedRoute>
+            <GatewayList />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/gateways/new"
+        element={
+          <ProtectedRoute>
+            <GatewayCreate />
+          </ProtectedRoute>
         }
       />
     </Routes>

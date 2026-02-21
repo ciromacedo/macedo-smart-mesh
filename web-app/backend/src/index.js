@@ -9,6 +9,7 @@ fastify.register(require("./plugins/auth"));
 fastify.register(require("./services/AuthService"));
 fastify.register(require("./services/UserService"));
 fastify.register(require("./services/TokenService"));
+fastify.register(require("./services/GatewayService"));
 
 // --- Health check ---
 fastify.register(async function routes(app) {
