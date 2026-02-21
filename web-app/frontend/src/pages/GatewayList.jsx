@@ -31,7 +31,7 @@ function GatewayList() {
   const handleToggle = (id) => {
     fetch(`/api/gateways/${id}/toggle`, {
       method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     })
       .then((res) => {
         if (!res.ok) throw new Error("Falha ao alterar status");
